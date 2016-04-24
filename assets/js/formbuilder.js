@@ -20,6 +20,25 @@
             this.showHideHelp();
 
             var this_obj = this;
+
+            $('#dialog-formtype').dialog({
+                autoOpen: false,
+                minWidth : 500
+            });
+
+            $(document).on( 'click', '.page-title-action', function(e) {e.preventDefault();
+                var this_url = $(this).attr('href');
+
+                if( $('#dialog-formtype').length ) {
+                    $('#dialog-formtype').dialog('open');
+                    return false;
+                }
+
+                window.location = this_url;
+
+
+            } );
+
             // Form Settings
             $('#wpuf-metabox-settings').on('change', 'select[name="wpuf_settings[redirect_to]"]', this.settingsRedirect);
             $('#wpuf-metabox-settings-update').on('change', 'select[name="wpuf_settings[edit_redirect_to]"]', this.settingsRedirect);

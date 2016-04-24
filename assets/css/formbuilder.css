@@ -1,3 +1,16 @@
+#dialog-formtype li {
+  float: left;
+  width: 30%;
+  height: 200px;
+  text-align: center;
+  border: 1px solid #EEEEEE;
+  border-radius: 5px;
+  margin: 2px;
+}
+#dialog-formtype li a {
+  display: block;
+  height: 100%;
+}
 .wpuf-hide {
   display: none;
 }

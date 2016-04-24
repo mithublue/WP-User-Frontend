@@ -96,16 +96,21 @@ class WPUF_Admin_Form {
     function enqueue_scripts() {
         global $pagenow, $post;
 
-        if ( !in_array( $pagenow, array( 'post.php', 'post-new.php') ) ) {
+        if ( !in_array( $pagenow, array( 'edit.php', 'post.php', 'post-new.php') ) ) {
             return;
         }
 
         wp_enqueue_script( 'jquery-ui-autocomplete' );
 
-        if ( !in_array( $post->post_type, array( 'wpuf_forms', 'wpuf_profile' ) ) ) {
+        $enqueued_post_types = apply_filters( 'wpuf_enqueued_post_types', array( 'wpuf_forms', 'wpuf_profile' ) );
+
+        if ( !in_array( $post->post_type, $enqueued_post_types ) ) {
             return;
         }
 
+        wp_enqueue_script('jquery-ui-dialog');
+        wp_enqueue_style("wp-jquery-ui-dialog");
+        
         // scripts
         wp_enqueue_script( 'jquery-smallipop', WPUF_ASSET_URI . '/js/jquery.smallipop-0.4.0.min.js', array('jquery') );
         wp_enqueue_script( 'wpuf-formbuilder-script', WPUF_ASSET_URI . '/js/formbuilder.js', array('jquery', 'jquery-ui-sortable') );
@@ -262,6 +267,16 @@ class WPUF_Admin_Form {
     }
 
     function menu_icon() {
+
+        global $pagenow;
+
+        $post_types = apply_filters( 'wpuf_admin_post_types', array( 'wpuf_forms', 'wpuf_profile' ) );
+
+        if( $pagenow == 'edit.php' && in_array( get_post_type(), $post_types ) ) {
+
+            $this->form_modal();
+        }
+
         ?>
         <style type="text/css">
             .icon32-posts-wpuf_forms,
@@ -1637,6 +1652,31 @@ class WPUF_Admin_Form {
         }
 
         exit;
+    }
+
+
+    function form_modal() {
+
+        $form_list = apply_filters( 'wpuf_list_form_types', array(
+            'wpuf_forms' => array(
+                'type' => 'post_form',
+                'label' => 'Create Post Form',
+            ),
+            'wpuf_profile' => array(
+                'type' => 'profile_form',
+                'label' => 'Create Registration Form'
+            )
+        ));
+        ?>
+        <div id="dialog-formtype" title="Form Type" style="display: none;">
+            <ul>
+                <?php foreach( $form_list as $form_key => $form_array ):?>
+                <li><a href="<?php echo admin_url(); ?>post-new.php?post_type=<?php echo $form_key; ?>"><?php echo $form_array['label']; ?></a></li>
+                <?php endforeach; ?>
+            <?php do_action( 'wpuf_list_form_type' ); ?>
+            </ul>
+        </div>
+        <?php
     }
 
 }
