@@ -147,6 +147,8 @@ class WP_User_Frontend {
         }
 
         if ( is_admin() ) {
+            require_once dirname( __FILE__ ) . '/admin/form-elements-panel.php';
+            require_once dirname( __FILE__ ) . '/admin/form-templates.php';
             require_once dirname( __FILE__ ) . '/admin/settings-options.php';
         }
 

@@ -21,16 +21,12 @@
 
             var this_obj = this;
 
-            $('#dialog-formtype').dialog({
-                autoOpen: false,
-                minWidth : 500
-            });
 
             $(document).on( 'click', '.page-title-action', function(e) {e.preventDefault();
                 var this_url = $(this).attr('href');
 
                 if( $('#dialog-formtype').length ) {
-                    $('#dialog-formtype').dialog('open');
+                    $('#dialog-formtype').fadeIn();
                     return false;
                 }
 

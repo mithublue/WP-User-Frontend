@@ -50,6 +50,10 @@ class WPUF_Admin_Form {
         add_action( 'save_post', array( $this, 'form_selection_metabox_save' ), 1, 2 ); // save the custom fields
 
 
+        //create dummy post based on post type
+        add_action ( 'admin_head' , array( $this, 'populate_dummy_form_data' ) );
+
+
     }
 
     function remove_quick_edit( $actions ) {
@@ -108,9 +112,7 @@ class WPUF_Admin_Form {
             return;
         }
 
-        wp_enqueue_script('jquery-ui-dialog');
-        wp_enqueue_style("wp-jquery-ui-dialog");
-        
+
         // scripts
         wp_enqueue_script( 'jquery-smallipop', WPUF_ASSET_URI . '/js/jquery.smallipop-0.4.0.min.js', array('jquery') );
         wp_enqueue_script( 'wpuf-formbuilder-script', WPUF_ASSET_URI . '/js/formbuilder.js', array('jquery', 'jquery-ui-sortable') );
@@ -1222,7 +1224,7 @@ class WPUF_Admin_Form {
      * @param object $post
      * @return int|void
      */
-    function save_form_meta( $post_id, $post, $update ) {
+    function save_form_meta( $post_id, $post, $update ) { pri($_POST);die();
 
         do_action( 'wpuf_check_post_type', $post, $update );
 
@@ -1655,6 +1657,11 @@ class WPUF_Admin_Form {
     }
 
 
+    /**
+     * Form modal
+     * will be visible when user
+     * intends to create a new form
+     */
     function form_modal() {
 
         $form_list = apply_filters( 'wpuf_list_form_types', array(
@@ -1669,14 +1676,77 @@ class WPUF_Admin_Form {
         ));
         ?>
         <div id="dialog-formtype" title="Form Type" style="display: none;">
-            <ul>
-                <?php foreach( $form_list as $form_key => $form_array ):?>
-                <li><a href="<?php echo admin_url(); ?>post-new.php?post_type=<?php echo $form_key; ?>"><?php echo $form_array['label']; ?></a></li>
-                <?php endforeach; ?>
-            <?php do_action( 'wpuf_list_form_type' ); ?>
-            </ul>
+            <form method="post">
+                <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce( 'wpuf_autoformcreate' ); ?>">
+                <ul>
+                    <?php foreach( $form_list as $form_key => $form_array ):?>
+                        <li><button type="submit" formaction="<?php echo admin_url(); ?>post-new.php?post_type=<?php echo $form_key; ?>&sample=true"><?php echo $form_array['label']; ?></button></li>
+                    <?php endforeach; ?>
+                    <?php do_action( 'wpuf_list_form_type' ); ?>
+                </ul>
+            </form>
+
         </div>
         <?php
+    }
+
+
+    function populate_dummy_form_data() {
+
+        global $post;
+        global $pagenow;
+
+
+        if( current_user_can('edit_posts') && $pagenow == 'post-new.php' && isset( $_GET['sample'] ) ) {
+
+            $nonce = $_POST['_wpnonce'];
+
+            if ( ! wp_verify_nonce( $nonce, 'wpuf_autoformcreate' ) ) {
+                return;
+            }
+
+            $fields = array(
+                'input_type' => 'text',
+                'template' => 'post_title',
+                'required' => 'yes',
+                'label' => 'post_title',
+                'name' => 'post_title',
+                'is_meta' => 'no',
+                'help' => '',
+                'css' => '',
+                'placeholder' => '',
+                'default' => '',
+                'size' => 2,
+                'wpuf_cond' => array(
+                    'condition_status' => 'no',
+                    'cond_field' => array(''),
+                    'cond_operator' => array(''),
+                    'cond_option' => array('- select -'),
+                    'cond_logic' => 'all'
+                )
+            );
+            $args = array(
+                'post_type'    => 'wpuf_input',
+                'post_parent'  => $post->ID,
+                'post_status'  => 'publish',
+                'post_content' => maybe_serialize( wp_unslash( $fields ) ),
+                'menu_order'   => isset( $order ) ? $order : 0
+            );
+
+            wp_insert_post($args);
+            ?>
+            <script>
+                window.location = '<?php echo html_entity_decode(get_edit_post_link($post->ID));  ?>';
+            </script>
+    <?php
+
+
+
+
+
+           //do_action('save_post',$post->ID, $post, 1);
+
+        }
     }
 
 }

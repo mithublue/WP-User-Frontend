@@ -18,6 +18,11 @@
 
         init: function() {
 
+            $('.wpuf-ratings').barrating({
+                theme: 'css-stars',
+                showSelectedRating: false
+            });
+
             //enable multistep
             this.enableMultistep(this);
 

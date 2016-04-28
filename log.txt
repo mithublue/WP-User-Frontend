@@ -1,0 +1,5 @@
+[19.04.2016 06:38:52][Array] Array
+(
+)
+
+[19.04.2016 06:38:52][payment] inserting payment failed.
