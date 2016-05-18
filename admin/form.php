@@ -53,7 +53,6 @@ class WPUF_Admin_Form {
         //create dummy post based on post type
         add_action ( 'admin_head' , array( $this, 'populate_dummy_form_data' ) );
 
-
     }
 
     function remove_quick_edit( $actions ) {
@@ -270,14 +269,7 @@ class WPUF_Admin_Form {
 
     function menu_icon() {
 
-        global $pagenow;
-
-        $post_types = apply_filters( 'wpuf_admin_post_types', array( 'wpuf_forms', 'wpuf_profile' ) );
-
-        if( $pagenow == 'edit.php' && in_array( get_post_type(), $post_types ) ) {
-
-            $this->form_modal();
-        }
+        $this->form_modal();
 
         ?>
         <style type="text/css">
@@ -1224,7 +1216,7 @@ class WPUF_Admin_Form {
      * @param object $post
      * @return int|void
      */
-    function save_form_meta( $post_id, $post, $update ) { pri($_POST);die();
+    function save_form_meta( $post_id, $post, $update ) {
 
         do_action( 'wpuf_check_post_type', $post, $update );
 
@@ -1664,24 +1656,39 @@ class WPUF_Admin_Form {
      */
     function form_modal() {
 
+        global $pagenow, $post;
+
         $form_list = apply_filters( 'wpuf_list_form_types', array(
+
             'wpuf_forms' => array(
-                'type' => 'post_form',
-                'label' => 'Create Post Form',
+
+                'post' => array(
+                    'label' => 'Create Post Form',
+                )
             ),
             'wpuf_profile' => array(
-                'type' => 'profile_form',
-                'label' => 'Create Registration Form'
+
+                'registration' => array(
+                    'label' => 'Create Registration Form',
+                )
             )
         ));
+
+        if( $pagenow == 'edit.php' || $pagenow == 'post.php' ) {
+
+            if( !in_array( get_post_type(), array_keys( $form_list ) ) ) return;
+        }
+
         ?>
         <div id="dialog-formtype" title="Form Type" style="display: none;">
             <form method="post">
                 <input type="hidden" name="_wpnonce" value="<?php echo wp_create_nonce( 'wpuf_autoformcreate' ); ?>">
                 <ul>
-                    <?php foreach( $form_list as $form_key => $form_array ):?>
-                        <li><button type="submit" formaction="<?php echo admin_url(); ?>post-new.php?post_type=<?php echo $form_key; ?>&sample=true"><?php echo $form_array['label']; ?></button></li>
-                    <?php endforeach; ?>
+                    <?php if( isset( $form_list[ get_post_type() ] ) ) : ?>
+                        <?php foreach( $form_list[ get_post_type() ] as $form_key => $form_array ):?>
+                            <li><button type="submit" formaction="<?php echo admin_url(); ?>post-new.php?post_type=<?php echo get_post_type(); ?>&form_type=<?php echo $form_key ?>&sample=true"><?php echo $form_array['label']; ?></button></li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                     <?php do_action( 'wpuf_list_form_type' ); ?>
                 </ul>
             </form>
@@ -1699,52 +1706,46 @@ class WPUF_Admin_Form {
 
         if( current_user_can('edit_posts') && $pagenow == 'post-new.php' && isset( $_GET['sample'] ) ) {
 
+            if( !isset( $_GET['form_type'] ) ) return;
+
+            $form_type = $_GET['form_type'];
+
             $nonce = $_POST['_wpnonce'];
 
             if ( ! wp_verify_nonce( $nonce, 'wpuf_autoformcreate' ) ) {
                 return;
             }
 
-            $fields = array(
-                'input_type' => 'text',
-                'template' => 'post_title',
-                'required' => 'yes',
-                'label' => 'post_title',
-                'name' => 'post_title',
-                'is_meta' => 'no',
-                'help' => '',
-                'css' => '',
-                'placeholder' => '',
-                'default' => '',
-                'size' => 2,
-                'wpuf_cond' => array(
-                    'condition_status' => 'no',
-                    'cond_field' => array(''),
-                    'cond_operator' => array(''),
-                    'cond_option' => array('- select -'),
-                    'cond_logic' => 'all'
-                )
-            );
-            $args = array(
-                'post_type'    => 'wpuf_input',
-                'post_parent'  => $post->ID,
-                'post_status'  => 'publish',
-                'post_content' => maybe_serialize( wp_unslash( $fields ) ),
-                'menu_order'   => isset( $order ) ? $order : 0
-            );
 
-            wp_insert_post($args);
+            $all_data = WPUF_Form_Templates::fill_data( $form_type );
+
+            if( isset( $all_data['wpuf_input'] ) && is_array( $all_data['wpuf_input'] ) ) {
+
+                foreach( $all_data['wpuf_input'] as $input => $input_array ) {
+
+                    $args = array(
+                        'post_type'    => 'wpuf_input',
+                        'post_parent'  => $post->ID,
+                        'post_status'  => 'publish',
+                        'post_content' => maybe_serialize( wp_unslash( $input_array ) ),
+                        'menu_order'   => isset( $order ) ? $order : 0
+                    );
+
+                    wp_insert_post( $args );
+                }
+            }
+
+
+            if( isset( $all_data['wpuf_settings'] ) && is_array( $all_data['wpuf_settings'] ) ) {
+                update_post_meta( $post->ID, $this->form_settings_key, $all_data['wpuf_settings'] );
+            }
+
             ?>
             <script>
                 window.location = '<?php echo html_entity_decode(get_edit_post_link($post->ID));  ?>';
             </script>
     <?php
 
-
-
-
-
-           //do_action('save_post',$post->ID, $post, 1);
 
         }
     }
